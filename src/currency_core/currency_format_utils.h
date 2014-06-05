@@ -145,6 +145,7 @@ namespace currency
   bool hexstr_to_addendum(const std::string& hex_buff, std::vector<crypto::hash>& add);
   bool set_payment_id_to_tx_extra(std::vector<uint8_t>& extra, const std::string& payment_id);
   bool get_payment_id_from_tx_extra(const transaction& tx, std::string& payment_id);
+  crypto::hash get_block_longhash(const block& b, uint64_t height, const std::vector<crypto::hash>& scratchpad);
 
   void print_currency_details();
     

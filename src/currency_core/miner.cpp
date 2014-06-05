@@ -34,7 +34,6 @@ namespace currency
     const command_line::arg_descriptor<std::string>   arg_extra_messages =     {"extra-messages-file", "Specify file for extra messages to include into coinbase transactions", "", true};
     const command_line::arg_descriptor<std::string>   arg_start_mining =       {"start-mining", "Specify wallet address to mining for", "", true};
     const command_line::arg_descriptor<uint32_t>      arg_mining_threads =     {"mining-threads", "Specify mining threads count", 0, true};
-    const command_line::arg_descriptor<std::string>   arg_set_donation_mode =  {"donation-vote", "Select one of two options for donations vote: \"true\"(to vote fore donation) or \"false\"(to vote against)", "", true};
   }
 
 
@@ -161,8 +160,7 @@ namespace currency
   {
     command_line::add_arg(desc, arg_extra_messages);
     command_line::add_arg(desc, arg_start_mining);
-    command_line::add_arg(desc, arg_mining_threads);
-    command_line::add_arg(desc, arg_set_donation_mode);    
+    command_line::add_arg(desc, arg_mining_threads);    
   }
   //-----------------------------------------------------------------------------------------------------
   bool miner::init(const boost::program_options::variables_map& vm)
@@ -170,9 +168,9 @@ namespace currency
     m_config_folder = command_line::get_arg(vm, command_line::arg_data_dir);
     epee::serialization::load_t_from_json_file(m_config, m_config_folder + "/" + MINER_CONFIG_FILE_NAME);
 
-    if(command_line::has_arg(vm, arg_set_donation_mode))
+    if(command_line::has_arg(vm, command_line::arg_set_donation_mode))
     {
-      std::string desc = command_line::get_arg(vm, arg_set_donation_mode);
+      std::string desc = command_line::get_arg(vm, command_line::arg_set_donation_mode);
       CHECK_AND_ASSERT_MES(desc == "true" || desc == "false", false, "wrong donation mode option");
       
       m_config.donation_decision_made = true;

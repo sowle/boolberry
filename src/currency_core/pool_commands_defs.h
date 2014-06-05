@@ -3,7 +3,7 @@
 
 
 #define POOL_COMMANDS_BASE 4000
-
+#define POOL_STATUS_OK     "OK"
 /************************************************************************/
 /*                                                                      */
 /************************************************************************/
@@ -70,13 +70,13 @@ namespace tools
     struct response
     {
       std::string status;
-      std::string id;
+      std::string session_id;
       job_details job;
       std::list<addendum> addms;
 
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(status)
-        KV_SERIALIZE(id)
+        KV_SERIALIZE(session_id)
         KV_SERIALIZE(job)
         KV_SERIALIZE(addms)
       END_KV_SERIALIZE_MAP()
@@ -118,7 +118,7 @@ namespace tools
 
     struct request
     {
-      std::string id;
+      //std::string id;
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(id)
       END_KV_SERIALIZE_MAP()
@@ -127,12 +127,12 @@ namespace tools
     struct response
     {
       height_info hi;
-      std::string scratchpad_hex;
+      std::vector<crypto::hash> scratchpad;
       std::string status;
 
       BEGIN_KV_SERIALIZE_MAP()
         KV_SERIALIZE(hi)
-        KV_SERIALIZE(scratchpad_hex)
+        KV_SERIALIZE_CONTAINER_POD_AS_BLOB(scratchpad)
         KV_SERIALIZE(status)
       END_KV_SERIALIZE_MAP()
     };

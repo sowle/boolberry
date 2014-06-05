@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
   command_line::add_arg(desc_cmd_sett, arg_log_level);
   command_line::add_arg(desc_cmd_sett, arg_console);
   command_line::add_arg(desc_cmd_sett, arg_show_details);
+  command_line::add_arg(desc_cmd_sett, command_line::arg_set_donation_mode);    
   
 
   currency::core::init_options(desc_cmd_sett);

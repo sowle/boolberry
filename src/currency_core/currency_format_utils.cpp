@@ -630,6 +630,14 @@ namespace currency
     return true;
   }
   //---------------------------------------------------------------
+  crypto::hash get_block_longhash(const block& b, uint64_t height, const std::vector<crypto::hash>& scratchpad)
+  {
+    return get_block_longhash(b, height, [&](uint64_t index) -> const crypto::hash&
+    {
+      return scratchpad[index%scratchpad.size()];
+    });
+  }
+  //---------------------------------------------------------------
   bool get_inputs_money_amount(const transaction& tx, uint64_t& money)
   {
     money = 0;
