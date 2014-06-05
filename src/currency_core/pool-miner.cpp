@@ -357,9 +357,31 @@ namespace currency
     return m_shares.count(h);
   }
   //-----------------------------------------------------------------------------------------------------
-  bool poolminer::next_round()
+  bool poolminer::calc_paymnets_from_shares(size_t total_shares_for_round, const std::map<std::string, uint64_t>& user_shares, std::list<std::pair<std::string, uint64_t> >& payments, uint64_t owner_payment)
   {
 
+  }
+  //-----------------------------------------------------------------------------------------------------
+  bool poolminer::next_round()
+  {
+    size_t total_shares_for_round = 0;
+    std::map<std::string, uint64_t> user_shares;
+    CRITICAL_REGION_BEGIN(m_shares_lock);
+    for(auto sh: m_shares)
+    {
+      ++user_shares[sh.second];    
+      ++total_shares_for_round;
+    }
+    m_shares.clear();
+    CRITICAL_REGION_END();
+
+    CRITICAL_REGION_BEGIN(m_current_payments_lock);
+    m_current_payments.clear();
+    
+    
+    if(total_shares_for_round)
+
+    return true;
   }
   //-----------------------------------------------------------------------------------------------------
   int poolminer::handle_submit_share(int command, tools::COMMAND_RPC_SUBMITSHARE::request& arg, tools::COMMAND_RPC_SUBMITSHARE::response& rsp, pool_connection_context& context)

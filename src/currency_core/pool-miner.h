@@ -16,6 +16,7 @@
 
 #define POOL_SHARE_DIFFICULTY_RATIO                     100
 //#define POOL_MAX_USERS_ALIVE                            500
+#define POOL_OWNER_FEE_PERCENTS                         3
 
 namespace currency
 {
@@ -114,6 +115,7 @@ namespace currency
     bool commit_share(const crypto::hash& h, const std::string& user_id);
     bool is_share_already_sent(const crypto::hash& h);
     bool next_round();
+    static bool calc_paymnets_from_shares(size_t total_shares_for_round, const std::map<std::string, uint64_t>& user_shares, std::list<std::pair<std::string, uint64_t> >& payments, uint64_t owner_payment);
 
     struct credential_entry
     {
@@ -140,6 +142,9 @@ namespace currency
 
     ::critical_section m_shares_lock;
     std::unordered_map<crypto::hash, std::string> m_shares;//share to user login
+
+    ::critical_section m_current_payments_lock;
+    std::list<std::pair<account_public_address, uint64_t> > m_current_payments;
 
 
     std::string m_credentials_filepath;
