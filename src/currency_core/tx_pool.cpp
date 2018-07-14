@@ -209,6 +209,7 @@ namespace currency
          (tx_age > CURRENCY_MEMPOOL_TX_FROM_ALT_BLOCK_LIVETIME && it->second.kept_by_block) )
       {
         LOG_PRINT_L0("Tx " << it->first << " removed from tx pool due to outdated, age: " << tx_age );
+        remove_transaction_keyimages(it->second.tx);
         m_transactions.erase(it++);
       }else
         ++it;
@@ -389,7 +390,10 @@ namespace currency
           << "last_failed_height: " << txd.last_failed_height << ENDL
           << "last_failed_id: " << txd.last_failed_id << ENDL
           << "live_time: " << epee::misc_utils::get_time_interval_string(time(nullptr) - txd.receive_time) << ENDL
-          << "decline_reason: " << txd.decline_reason << ENDL;
+          << "decline_reason: " << txd.decline_reason << ENDL
+          << "amount_out: " << get_outs_money_amount(txd.tx)  << ENDL
+          << "received_timestamp: " << txd.receive_time << ENDL
+          << "received: " << std::ctime(&txd.receive_time) <<  ENDL;
       }else
       {
         tx_details& txd = txe.second;
@@ -410,7 +414,8 @@ namespace currency
     return ss.str();
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::fill_block_template(block &bl, size_t median_size, uint64_t already_generated_coins, uint64_t already_donated_coins, size_t &total_size, uint64_t &fee) {
+  bool tx_memory_pool::fill_block_template(block &bl, size_t median_size, uint64_t already_generated_coins, uint64_t already_donated_coins, size_t &total_size, uint64_t &fee) 
+  {
     typedef transactions_container::value_type txv;
     CRITICAL_REGION_LOCAL(m_transactions_lock);
 
@@ -433,27 +438,34 @@ namespace currency
     size_t best_position = 0;
     total_size = 0;
     fee = 0;
+    size_t tx_count = 0;
 
     std::unordered_set<crypto::key_image> k_images;
 
-    for (size_t i = 0; i < txs.size(); i++) {
+    for (size_t i = 0; i < txs.size(); i++) 
+    {
       txv &tx(*txs[i]);
 
-      if(!is_transaction_ready_to_go(tx.second) || have_key_images(k_images, tx.second.tx)) {
+      if (tx_count > 124 || !is_transaction_ready_to_go(tx.second) || have_key_images(k_images, tx.second.tx))
+      {
         txs[i] = NULL;
         continue;
       }
+      ++tx_count;
       append_key_images(k_images, tx.second.tx);
+     
 
       current_size += tx.second.blob_size;
       current_fee += tx.second.fee;
 
       uint64_t current_reward;
-      if (!get_block_reward(median_size, current_size + CURRENCY_COINBASE_BLOB_RESERVED_SIZE, already_generated_coins, already_donated_coins, current_reward, max_donation)) {
+      if (!get_block_reward(median_size, current_size + CURRENCY_COINBASE_BLOB_RESERVED_SIZE, already_generated_coins, already_donated_coins, current_reward, max_donation)) 
+      {
         break;
       }
 
-      if (best_money < current_reward + current_fee) {
+      if (best_money < current_reward + current_fee)
+      {
         best_money = current_reward + current_fee;
         best_position = i + 1;
         total_size = current_size;
@@ -461,8 +473,10 @@ namespace currency
       }
     }
 
-    for (size_t i = 0; i < best_position; i++) {
-      if (txs[i]) {
+    for (size_t i = 0; i < best_position; i++) 
+    {
+      if (txs[i]) 
+      {
         bl.tx_hashes.push_back(txs[i]->first);
       }
     }
@@ -478,9 +492,18 @@ namespace currency
     if(!boost::filesystem::exists(state_file_path, ec))
       return true;
     bool res = tools::unserialize_obj_from_file(*this, state_file_path);
-    if(!res)
+    if (res)
     {
-      LOG_PRINT_L0("Failed to load memory pool from file " << state_file_path);
+      // mem pool has just been successfully loaded from file
+      // delete pool file to avoid loading outdated data on the next load (in case a crash happen for ex.)
+      if (!boost::filesystem::remove_all(state_file_path))
+      {
+        LOG_ERROR("failed to remove pool file " << state_file_path << " after a successful load");
+      }
+    }
+    else
+    {
+      LOG_ERROR("Failed to load memory pool from file " << state_file_path);
     }
     return res;
   }

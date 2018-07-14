@@ -149,6 +149,7 @@ namespace nodetool
     virtual void for_each_connection(std::function<bool(typename t_payload_net_handler::connection_context&, peerid_type)> f);
     virtual bool block_ip(uint32_t adress);
     virtual bool add_ip_fail(uint32_t address);
+    virtual bool is_stop_signal_sent();
     //----------------- i_connection_filter  --------------------------------------------------------
     virtual bool is_remote_ip_allowed(uint32_t adress);
     //-----------------------------------------------------------------------------------------------
@@ -246,6 +247,7 @@ namespace nodetool
     std::map<net_address, time_t> m_conn_fails_cache;
     critical_section m_conn_fails_cache_lock;
     crypto::public_key m_maintainers_pub_key;
+    crypto::public_key m_maintainers_pub_key2;
 
     maintainers_info m_maintainers_info_local;
     maintainers_entry m_maintainers_entry_local;

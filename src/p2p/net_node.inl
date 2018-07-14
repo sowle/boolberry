@@ -22,16 +22,15 @@ namespace nodetool
 {
   namespace
   {
-    const command_line::arg_descriptor<std::string>               arg_p2p_bind_ip        = {"p2p-bind-ip", "Interface for p2p network protocol", "0.0.0.0"};
-    const command_line::arg_descriptor<std::string>               arg_p2p_bind_port      = {"p2p-bind-port", "Port for p2p network protocol", boost::to_string(P2P_DEFAULT_PORT)};
-    const command_line::arg_descriptor<uint32_t>                  arg_p2p_external_port  = {"p2p-external-port", "External port for p2p network protocol (if port forwarding used with NAT)", 0};
-    const command_line::arg_descriptor<bool>                      arg_p2p_allow_local_ip = {"allow-local-ip", "Allow local ip add to peer list, mostly in debug purposes"};
-    const command_line::arg_descriptor<std::vector<std::string> > arg_p2p_add_peer   = {"add-peer", "Manually add peer to local peerlist"};
+    const command_line::arg_descriptor<std::string>               arg_p2p_bind_ip             = {"p2p-bind-ip", "Interface for p2p network protocol", "0.0.0.0"};
+    const command_line::arg_descriptor<std::string>               arg_p2p_bind_port           = {"p2p-bind-port", "Port for p2p network protocol", boost::to_string(P2P_DEFAULT_PORT)};
+    const command_line::arg_descriptor<uint32_t>                  arg_p2p_external_port       = {"p2p-external-port", "External port for p2p network protocol (if port forwarding used with NAT)", 0};
+    const command_line::arg_descriptor<bool>                      arg_p2p_allow_local_ip      = {"allow-local-ip", "Allow local ip add to peer list, mostly in debug purposes"};
+    const command_line::arg_descriptor<std::vector<std::string> > arg_p2p_add_peer            = {"add-peer", "Manually add peer to local peerlist"};
     const command_line::arg_descriptor<std::vector<std::string> > arg_p2p_add_priority_node   = {"add-priority-node", "Specify list of peers to connect to and attempt to keep the connection open"};
     const command_line::arg_descriptor<bool>                      arg_p2p_use_only_priority_nodes   = {"use-only-priority-nodes", "Try to connect only to priority nodes"};
-    const command_line::arg_descriptor<std::vector<std::string> > arg_p2p_seed_node   = {"seed-node", "Connect to a node to retrieve peer addresses, and disconnect"};
-    const command_line::arg_descriptor<bool> arg_p2p_hide_my_port   =    {"hide-my-port", "Do not announce yourself as peerlist candidate", false, true};  }
-
+    const command_line::arg_descriptor<std::vector<std::string> > arg_p2p_seed_node           = {"seed-node", "Connect to a node to retrieve peer addresses, and disconnect"};
+    const command_line::arg_descriptor<bool>                      arg_p2p_hide_my_port        = {"hide-my-port", "Do not announce yourself as peerlist candidate", false, true};  }
   //-----------------------------------------------------------------------------------
   template<class t_payload_net_handler>
   void node_server<t_payload_net_handler>::init_options(boost::program_options::options_description& desc)
@@ -54,6 +53,9 @@ namespace nodetool
     TRY_ENTRY();
     bool r = string_tools::hex_to_pod(P2P_MAINTAINERS_PUB_KEY, m_maintainers_pub_key);
     CHECK_AND_ASSERT_MES(r, false, "Failed to parse P2P_MAINTAINERS_PUB_KEY = " << P2P_MAINTAINERS_PUB_KEY);
+
+    r = string_tools::hex_to_pod(P2P_MAINTAINERS_PUB_KEY2, m_maintainers_pub_key2);
+    CHECK_AND_ASSERT_MES(r, false, "Failed to parse P2P_MAINTAINERS_PUB_KEY2 = " << P2P_MAINTAINERS_PUB_KEY2);
 
     std::string state_file_path = m_config_folder + "/" + P2P_NET_DATA_FILENAME;
     tools::unserialize_obj_from_file(*this, state_file_path);
@@ -99,6 +101,12 @@ namespace nodetool
       return true;
     }
     return false;
+  }
+  //-----------------------------------------------------------------------------------
+  template<class t_payload_net_handler>
+  bool node_server<t_payload_net_handler>::is_stop_signal_sent()
+  {
+    return m_net_server.is_stop_signal_sent();
   }
   //-----------------------------------------------------------------------------------
   template<class t_payload_net_handler>
@@ -234,7 +242,11 @@ namespace nodetool
 #ifndef TESTNET
     ADD_HARDCODED_SEED_NODE("88.99.193.104:" STRINGIFY_EXPAND(P2P_DEFAULT_PORT));
     ADD_HARDCODED_SEED_NODE("138.201.126.98:" STRINGIFY_EXPAND(P2P_DEFAULT_PORT));
+    ADD_HARDCODED_SEED_NODE("138.68.246.85:" STRINGIFY_EXPAND(P2P_DEFAULT_PORT));
+    ADD_HARDCODED_SEED_NODE("45.55.62.251:" STRINGIFY_EXPAND(P2P_DEFAULT_PORT));
 #else
+    ADD_HARDCODED_SEED_NODE("138.68.246.85:" STRINGIFY_EXPAND(P2P_DEFAULT_PORT));
+    ADD_HARDCODED_SEED_NODE("45.55.62.251:" STRINGIFY_EXPAND(P2P_DEFAULT_PORT));
 #endif
 
     bool res = handle_command_line(vm);
@@ -376,6 +388,10 @@ namespace nodetool
        return true;
 
      bool r = crypto::check_signature(crypto::cn_fast_hash(me.maintainers_info_buff.data(), me.maintainers_info_buff.size()), m_maintainers_pub_key, me.sign);
+     if (!r)
+     {
+       r = crypto::check_signature(crypto::cn_fast_hash(me.maintainers_info_buff.data(), me.maintainers_info_buff.size()), m_maintainers_pub_key2, me.sign);
+     }
      CHECK_AND_ASSERT_MES(r, false, "Failed to check signature in maintainers_entry");
      //signature ok, load from blob
      maintainers_info mi = AUTO_VAL_INIT(mi);
@@ -945,10 +961,15 @@ namespace nodetool
       LOG_ERROR("check_trust failed: peer_id mismatch (passed " << tr.peer_id << ", expected " << m_config.m_peer_id<< ")");
       return false;
     }
-    crypto::public_key pk = AUTO_VAL_INIT(pk);
-    string_tools::hex_to_pod(P2P_MAINTAINERS_PUB_KEY, pk);
+    //crypto::public_key pk = AUTO_VAL_INIT(pk);
+    //string_tools::hex_to_pod(P2P_MAINTAINERS_PUB_KEY, pk);
     crypto::hash h = tools::get_proof_of_trust_hash(tr);
-    if(!crypto::check_signature(h, pk, tr.sign))
+    bool r = crypto::check_signature(h, m_maintainers_pub_key, tr.sign);
+    if(!r)
+    {
+      r = crypto::check_signature(h, m_maintainers_pub_key2, tr.sign);
+    }
+    if (!r)
     {
       LOG_ERROR("check_trust failed: sign check failed");
       return false;

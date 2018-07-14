@@ -58,8 +58,12 @@ namespace currency
     bool sign_transfer(const std::vector<std::string> &args);
     bool submit_transfer(const std::vector<std::string> &args);
 
+    bool integrated_address(const std::vector<std::string> &args);
+
     bool get_tx_key(const std::vector<std::string> &args_);
     bool check_tx_key(const std::vector<std::string> &args);
+    bool sign_text(const std::vector<std::string> &args);
+    bool validate_text_signature(const std::vector<std::string> &args);
     bool check_tx_key_helper(const crypto::hash &txid, const currency::account_public_address &address, const crypto::key_derivation &derivation);
     bool print_address(const std::vector<std::string> &args = std::vector<std::string>());
     bool save(const std::vector<std::string> &args);
