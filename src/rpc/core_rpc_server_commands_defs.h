@@ -58,7 +58,7 @@ struct EMPTY_STRUCT {
 
     struct response
     {
-      uint64_t 	 height;
+      uint64_t    height;
       std::string status;
 
       BEGIN_KV_SERIALIZE_MAP()
@@ -361,20 +361,20 @@ struct EMPTY_STRUCT {
   //-----------------------------------------------
   struct COMMAND_RPC_STOP_DAEMON
   {
-	  struct request
-	  {
-		  BEGIN_KV_SERIALIZE_MAP()
-		  END_KV_SERIALIZE_MAP()
-	  };
+    struct request
+    {
+      BEGIN_KV_SERIALIZE_MAP()
+      END_KV_SERIALIZE_MAP()
+    };
 
-	  struct response
-	  {
-		  std::string status;
+    struct response
+    {
+      std::string status;
 
-		  BEGIN_KV_SERIALIZE_MAP()
-			  KV_SERIALIZE(status)
-		  END_KV_SERIALIZE_MAP()
-	  };
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(status)
+      END_KV_SERIALIZE_MAP()
+    };
   };
   //-----------------------------------------------
   struct COMMAND_RPC_STOP_MINING
@@ -1009,6 +1009,27 @@ struct F_COMMAND_RPC_GET_BLOCKCHAIN_SETTINGS {
         KV_SERIALIZE(address)
         KV_SERIALIZE(text)
         KV_SERIALIZE(signature)
+      END_KV_SERIALIZE_MAP()
+    };
+
+    struct response
+    {
+      std::string status;
+
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(status)
+      END_KV_SERIALIZE_MAP()
+    };
+  };
+
+  struct COMMAND_RPC_RELAY_TXS
+  {
+    struct request
+    {
+      std::vector<std::string> raw_txs;
+
+      BEGIN_KV_SERIALIZE_MAP()
+        KV_SERIALIZE(raw_txs)
       END_KV_SERIALIZE_MAP()
     };
 
